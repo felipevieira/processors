@@ -6,7 +6,6 @@ from __future__ import unicode_literals
 
 import io
 import sys
-import getopt
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 

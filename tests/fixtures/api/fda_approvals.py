@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 import pytest
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def fda_approval(conn, fda_application):
     fda_approval = {
         'id': ('%s-002' % fda_application),

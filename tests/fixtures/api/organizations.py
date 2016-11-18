@@ -8,7 +8,7 @@ import pytest
 import uuid
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def organization(conn, fda_source):
     organisation = {
         'id': uuid.uuid1().hex,

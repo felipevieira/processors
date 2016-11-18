@@ -23,6 +23,7 @@ class TestDocumentWriter(object):
 
         assert conn['database']['documents'].find_one(id=document_id)
 
+
     def test_writes_file_only_document(self, conn, file_fixture):
         document = {
             'name': 'name',
@@ -31,6 +32,7 @@ class TestDocumentWriter(object):
         }
 
         assert writers.write_document(conn, document) is not None
+
 
     def test_writes_url_only_document(self, conn):
         document = {
@@ -41,6 +43,7 @@ class TestDocumentWriter(object):
 
         assert writers.write_document(conn, document) is not None
 
+
     def test_skips_document_with_invalid_url(self, conn):
         document = {
             'name': 'name',
@@ -49,6 +52,7 @@ class TestDocumentWriter(object):
         }
 
         assert writers.write_document(conn, document) is None
+
 
     def test_updates_existing_document_by_id(self, conn):
         original_document = {
@@ -72,6 +76,7 @@ class TestDocumentWriter(object):
         assert document['name'] == new_document['name']
         assert document['type'] == new_document['type']
 
+
     def test_creates_link_with_trial(self, conn, trial):
         document = {
             'id': '5b99281096b311e6a0ecf8165487599c',
@@ -86,6 +91,7 @@ class TestDocumentWriter(object):
             trial_id=document['trial_id'],
             document_id=document['id']
         )
+
 
     def test_updates_documents_with_same_type_and_file_id(self, conn, file_fixture):
         document_id = '5b99281096b311e6a0ecf8165487599c'
@@ -103,6 +109,7 @@ class TestDocumentWriter(object):
 
         assert uuid.UUID(new_document_id).hex == document_id
 
+
     def test_updates_documents_with_same_type_and_url(self, conn):
         document_id = '5b99281096b311e6a0ecf8165487599c'
         document = {
@@ -118,6 +125,7 @@ class TestDocumentWriter(object):
         new_document_id = writers.write_document(conn, document)
 
         assert uuid.UUID(new_document_id).hex == document_id
+
 
     def test_updates_fda_documents(self, conn, file_fixture, fda_approval):
         document_id = '5b99281096b311e6a0ecf8165487599c'

@@ -7,24 +7,24 @@ from __future__ import unicode_literals
 import pytest
 import uuid
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def trial(conn, nct_source):
     trial = {
         'id': uuid.uuid1().hex,
         'identifiers': {'nct': 'NCT00212927'},
         'registration_date': '2005-09-13',
         'public_title': 'Continuity of Care and Outcomes After Discharge From Hospital',
-        'brief_summary': '',
+        'brief_summary': None,
         'scientific_title': 'Patient Outcomes After Discharge From Hospital',
         'description': 'See above',
         'recruitment_status': 'not_recruiting',
-        'eligibility_criteria': '',
+        'eligibility_criteria': None,
         'first_enrollment_date': '2002-10-01',
         'study_type': 'Observational',
         'study_design': 'Prospective',
-        'study_phase': '',
-        'primary_outcomes': '',
-        'secondary_outcomes': '',
+        'study_phase': None,
+        'primary_outcomes': None,
+        'secondary_outcomes': None,
         'has_published_results': False,
         'gender': 'both',
         'status': 'complete',

@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 import pytest
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def nct_source(conn):
     source = {
         'id': 'nct',
@@ -20,7 +20,7 @@ def nct_source(conn):
     return source_id
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def fda_source(conn):
     source = {
         'id': 'fda',
@@ -28,5 +28,18 @@ def fda_source(conn):
         'type': 'other',
         'source_url': 'http://www.fda.gov',
     }
+    source_id = conn['database']['sources'].insert(source)
+    return source_id
+
+
+@pytest.fixture
+def euctr_source(conn):
+    source = {
+        'id': 'euctr',
+        'name': 'EU Clinical Trials Register',
+        'type': 'register',
+        'source_url': 'https://www.clinicaltrialsregister.eu',
+        'terms_and_conditions_url': 'https://www.clinicaltrialsregister.eu/disclaimer.html',
+      }
     source_id = conn['database']['sources'].insert(source)
     return source_id
