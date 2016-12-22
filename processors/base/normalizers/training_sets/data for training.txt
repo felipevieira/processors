@@ -1,5 +1,4 @@
 Afghanistan
-Åland Islands
 Albania
 Algeria
 American Samoa
@@ -52,10 +51,8 @@ Congo
 Congo, The Democratic Republic of the
 Cook Islands
 Costa Rica
-Côte d'Ivoire
 Croatia
 Cuba
-Curaçao
 Cyprus
 Czech Republic
 Denmark
@@ -178,11 +175,9 @@ Poland
 Portugal
 Puerto Rico
 Qatar
-Réunion
 Romania
 Russian Federation
 Rwanda
-Saint Barthélemy
 Saint Helena, Ascension and Tristan da Cunha
 Saint Kitts and Nevis
 Saint Lucia
@@ -347,7 +342,6 @@ The People's Republic of China
 Former Serbia and Montenegro
 South America
 Venezuela
-Côte D'Ivoire
 Asia(except Japan)
 USA
 Virgin Islands (U.S.)
