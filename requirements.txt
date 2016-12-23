@@ -10,3 +10,7 @@ boto3
 PyPDF2
 python-documentcloud
 pybossa-client
+jellyfish
+numpy
+pycountry
+scipy
