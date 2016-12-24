@@ -42,8 +42,7 @@ def build_country_clusters():
             """
             i, j = coord
             ans = False
-            if (countries[i] in canonical_names and countries[j] in canonical_names) or\
-                            countries[i] in acronyms or countries[j] in acronyms:
+            if (countries[i] in canonical_names and countries[j] in canonical_names):
                 ans = True
             return ans
 
