@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import csv
+import logging
 import jellyfish
 import numpy
 import pycountry
@@ -10,6 +11,8 @@ MAX_CLUSTER_DISTANCE = 0.9
 MIN_CLUSTER_DISTANCE = 0.01
 
 DISTANCE_THRESHOLD = 0.15
+
+logger = logging.getLogger(__name__)
 
 
 def build_country_clusters():
@@ -124,7 +127,7 @@ def get_normalized_form(country, cluster=COUNTRY_CLUSTER):
         cluster (dict): the country clusters dict
 
     Yields:
-        a suggested canonical name to country
+        suggested_normalization (str): a suggested canonical name to country
     """
 
     # Search for the country on the pre-built clusters
@@ -133,9 +136,16 @@ def get_normalized_form(country, cluster=COUNTRY_CLUSTER):
             try:
                 # Country found in complete cluster. Return its canonical
                 # equivalent and log the successful normalization
-                return list(set(cluster_items) & set([c.name for c in pycountry.countries]))[0]
+                suggested_normalization = list(set(cluster_items) & set([c.name for c in pycountry.countries]))[0]
+                logger.debug(
+                    'Location "%s" successfully normalized to "%s"',
+                    country, suggested_normalization)
+                return suggested_normalization
             except IndexError:
-                # Contry found in a single cluster
+                logger.debug(
+                    'Unsuccessfully location normalization of "%s"',
+                    country)
+                # Country found in a single cluster
                 # Return itself and log the unsuccessful normalization
                 return country.strip()
 
