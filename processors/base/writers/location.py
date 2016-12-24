@@ -8,6 +8,7 @@ import uuid
 import logging
 import datetime
 from .. import helpers
+from .. import normalizers
 logger = logging.getLogger(__name__)
 
 
@@ -33,7 +34,8 @@ def write_location(conn, location, source_id, trial_id=None):
     timestamp = datetime.datetime.utcnow()
 
     # Get name
-    name = helpers.clean_string(location['name'])
+    name = normalizers.get_normalized_form.get_normalized_form\
+        (helpers.clean_string(location['name']))
     if len(name) <= 1:
         return None
 
