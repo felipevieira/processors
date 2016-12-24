@@ -34,7 +34,7 @@ def write_location(conn, location, source_id, trial_id=None):
     timestamp = datetime.datetime.utcnow()
 
     # Get name
-    name = normalizers.get_normalized_form.get_normalized_form\
+    name = normalizers.get_normalized_form\
         (helpers.clean_string(location['name']))
     if len(name) <= 1:
         return None
