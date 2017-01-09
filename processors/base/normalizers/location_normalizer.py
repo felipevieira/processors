@@ -103,7 +103,7 @@ def build_country_clusters():
 
     # Compute the country linkage and extract the clusters
     country_linkage_matrix = scipy.cluster.hierarchy.\
-        linkage(distances_triangle_matrix, method='single')
+        linkage(distances_triangle_matrix, method='complete')
     flat_clusters = scipy.cluster.hierarchy.fcluster\
         (country_linkage_matrix, DISTANCE_THRESHOLD, criterion='distance')
 
