@@ -22,7 +22,6 @@ def build_country_clusters():
         cluster: country cluster used for normalization suggestion
     """
 
-    #
     # also respecting cannot-link and must-link rules
     def _cluster_distance(coord):
         """An inner function that computs the Jaro distance between two countries
@@ -131,7 +130,7 @@ def get_normalized_form(country, cluster=COUNTRY_CLUSTER):
 
     # Search for the country on the pre-built clusters
     for cluster_id, cluster_items in cluster.iteritems():
-        if unicode(country.strip(), encoding='utf-8') in cluster_items:
+        if country.strip() in cluster_items:
             try:
                 # Country found in complete cluster. Return its canonical
                 # equivalent and log the successful normalization
