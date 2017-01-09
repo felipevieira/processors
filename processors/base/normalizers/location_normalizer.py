@@ -35,7 +35,7 @@ def build_country_clusters():
             """A simple cannot-link relantionship that prevents canonical clusters
                 form being merged even if they share a small string edition distance
             Args:
-                coord(tuple): two cluster elements
+                coord(tuple): two clusters elements
             Yields:
                 ans: True if elements clusters cannot be merged, False otherwise
             """
@@ -152,5 +152,5 @@ def get_normalized_form(country, cluster=COUNTRY_CLUSTER):
     with open(os.path.join(os.path.dirname(__file__),
                            'training_sets/location_training_test.csv'), 'a')\
             as csv_file:
-        csv_file.write(country)
+        csv_file.write("%s\n" % country)
     return get_normalized_form(country, cluster=build_country_clusters())
