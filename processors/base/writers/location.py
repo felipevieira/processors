@@ -37,6 +37,10 @@ def write_location(conn, location, source_id, trial_id=None):
     name = normalizers.get_normalized_form\
         (helpers.clean_string(location['name']))
 
+    print("##########################################")
+    print("%s normalizou para %s" % (helpers.clean_string(location['name']), name))
+    print("##########################################")
+
     if len(name) <= 1:
         return None
 

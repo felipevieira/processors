@@ -10,7 +10,7 @@ import scipy.cluster.hierarchy
 MAX_CLUSTER_DISTANCE = 0.9
 MIN_CLUSTER_DISTANCE = 0.01
 
-DISTANCE_THRESHOLD = 0.15
+DISTANCE_THRESHOLD = 0.217
 
 logger = logging.getLogger(__name__)
 
@@ -73,16 +73,42 @@ def build_country_clusters():
                               (alpha_3=countries[j]).name == countries[i]
             return ans
 
+        def word_by_word(word1, word2):
+            def organize(array1, array2):
+                if len(array1) > len(array2):
+                    return array1, array2
+                else:
+                    return array2, array1
+
+            word1 = word1.replace(",", "").replace(".", "").replace("the", "").split()
+            word2 = word2.replace(",", "").replace(".", "").replace("the", "").split()
+
+            if len(word1) == 1 and len(word2) == 1:
+                return jellyfish.jaro_distance(word1[0], word2[0])
+
+            big_word, small_word = organize(word1, word2)
+
+            distance_array = []
+            for i in small_word:
+                dist = 0.0
+                for z in big_word:
+                    temp = jellyfish.jaro_distance(i, z)
+                    if temp > dist:
+                        dist = temp
+                distance_array.append(dist)
+
+            return float(sum(distance_array)) / len(distance_array)
+
         # Setting the clustering distances according to must-link
         # and cannot-link relationships
         if not (cannot_link(coord) or must_link(coord)):
             i, j = coord
-            cluster_distance = 1 - jellyfish.jaro_distance\
-                (countries[i].lower(), countries[j].lower())
+            cluster_distance = 1 - word_by_word(countries[i].lower(), countries[j].lower())
         elif cannot_link(coord):
             cluster_distance = MAX_CLUSTER_DISTANCE
         elif must_link(coord):
             cluster_distance = MIN_CLUSTER_DISTANCE
+
         return cluster_distance
 
     # Read an normalize country names
@@ -135,11 +161,13 @@ def get_normalized_form(country, cluster=COUNTRY_CLUSTER):
                 # Country found in complete cluster. Return its canonical
                 # equivalent and log the successful normalization
                 suggested_normalization = list(set(cluster_items) & set([c.name for c in pycountry.countries]))[0]
+                print('Location "%s" successfully normalized to "%s"' % (country, suggested_normalization) ) 
                 logger.debug(
                     'Location "%s" successfully normalized to "%s"',
                     country, suggested_normalization)
                 return suggested_normalization
             except IndexError:
+                print('Unsuccessfully location normalization of "%s"' % country)
                 logger.debug(
                     'Unsuccessfully location normalization of "%s"',
                     country)
@@ -152,5 +180,19 @@ def get_normalized_form(country, cluster=COUNTRY_CLUSTER):
     with open(os.path.join(os.path.dirname(__file__),
                            'training_sets/location_training_test.csv'), 'a')\
             as csv_file:
-        csv_file.write("%s\n" % country)
+        csv_file.write("%s\n" % country.encode("utf-8"))
     return get_normalized_form(country, cluster=build_country_clusters())
+
+from sets import Set
+
+if __name__ == '__main__':
+    with open(os.path.join(os.path.dirname(__file__),
+                           '/home/felipevieira/Área de Trabalho/opentrials_locations.csv'), 'r') \
+            as csv_file:
+            reader = csv.DictReader(csv_file)
+            countries = [unicode(country['name'].strip(),
+                                 encoding="utf-8") for country in reader]
+            normalized_forms = Set([])
+
+            for country in countries:
+                normalized_forms.add(get_normalized_form(country))
