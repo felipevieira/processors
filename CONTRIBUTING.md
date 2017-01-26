@@ -7,7 +7,7 @@ The project follows the [Open Knowledge International coding standards](https://
 ```
 virtualenv .python -p python2
 source .python/bin/activate
-make install
+pip install --upgrade -r requirements.txt
 cp .env.example .env
 editor .env # set your values
 set -a; source .env
@@ -29,7 +29,7 @@ set -a; source .env
 #### Run tests:
 
 ```
-$ make test
+$ tox
 ```
 
 #### Add tests
