@@ -7,7 +7,7 @@ The project follows the [Open Knowledge International coding standards](https://
 ```
 virtualenv .python -p python2
 source .python/bin/activate
-pip install --upgrade -r requirements.txt
+pip install -r requirements.txt
 cp .env.example .env
 editor .env # set your values
 set -a; source .env
@@ -27,10 +27,13 @@ set -a; source .env
     ```
 
 #### Run tests:
+  1. To run the tests, you need tox installed. We recommend you to install it globally with ```pip install -g tox```
 
-```
-$ tox
-```
+  2. Run the tests:
+
+    ```
+    $ tox
+    ```
 
 #### Add tests
 
