@@ -12,4 +12,3 @@ pybossa-client
 fuzzywuzzy
 python-Levenshtein
 iso3166
-tox
