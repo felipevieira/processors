@@ -12,3 +12,5 @@ pybossa-client
 fuzzywuzzy
 python-Levenshtein
 iso3166
+dedupe
+unidecode

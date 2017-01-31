@@ -28,6 +28,12 @@ def process_trials(conn, table, extractors):
 
     errors = 0
     success = 0
+
+    stored_organisations = list(conn['database']['organisations'].all())
+    stored_organisation_names = [entry['name'] for entry in stored_organisations]
+
+    organisation_clusters = helpers.get_organisation_clusters(stored_organisations)
+
     for record in helpers.iter_rows(conn, 'warehouse', table, orderby='meta_id'):
 
         conn['database'].begin()
@@ -63,7 +69,6 @@ def process_trials(conn, table, extractors):
 
             # Write other entities
             if is_primary:
-
                 # Delete existent relationships
                 conn['database']['trials_conditions'].delete(trial_id=trial_id)
                 conn['database']['trials_interventions'].delete(trial_id=trial_id)
@@ -101,6 +106,9 @@ def process_trials(conn, table, extractors):
                 # Extract and write organisations/relationships
                 organisations = extractors['extract_organisations'](record)
                 for organisation in organisations:
+                    if organisation['name'] in stored_organisation_names:
+                        organisation['name'] = helpers.normalize_organisation_name(
+                            organisation['name'], organisation_clusters)
                     org_id = writers.write_organisation(conn, organisation, source_id)
                     if org_id is None:
                         continue
@@ -120,11 +128,11 @@ def process_trials(conn, table, extractors):
             errors += 1
             conn['database'].rollback()
             logger.exception('Processing error: %s [%s]',
-                repr(exception), errors)
+                             repr(exception), errors)
 
         else:
             success += 1
             conn['database'].commit()
             if not success % 100:
                 logger.info('Processed %s trials from %s',
-                    success, table)
+                            success, table)

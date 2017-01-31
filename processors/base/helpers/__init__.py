@@ -13,9 +13,11 @@ import logging
 import datetime
 import urlparse
 import csv
+import unidecode
 import fuzzywuzzy.fuzz
 import fuzzywuzzy.process
 import iso3166
+import dedupe
 
 from . import pybossa_tasks_updater
 
@@ -24,8 +26,6 @@ PyBossaTasksUpdater = pybossa_tasks_updater.PyBossaTasksUpdater
 
 
 # Module API
-
-EDIT_DISTANCE_THRESHOLD = 75
 
 
 def get_variables(object, filter=None):
@@ -301,6 +301,7 @@ def get_canonical_location_name(location):
     # Extracted from: https://github.com/datasets/country-codes/blob/master/data/country-codes.csv
     CSV_PATH = os.path.join(os.path.dirname(__file__), 'data/countries.csv')
     DISTANCE_SCORER = fuzzywuzzy.fuzz.token_sort_ratio
+    EDIT_DISTANCE_THRESHOLD = 75
 
     cleaned_location = remove_string_punctuation(location)
     current_match = location
@@ -329,3 +330,66 @@ def get_canonical_location_name(location):
     logger.debug('Location "%s" normalized as "%s"', cleaned_location, current_match)
 
     return current_match
+
+def _dedup_cluster(cluster_entries):
+    """Sample, train and build organisation clusters
+
+    Args:
+        cluster_entries (str): a list of candidates to
+        be grouped in equivalent sets
+    """
+
+    MATCH_THRESHOLD = 0.5
+    TRAINING_FILE = os.path.join(os.path.dirname(__file__), 'data/organisation_training_data.csv')
+
+    fields = [{'field' : 'name', 'type': 'String'}]
+    deduper = dedupe.Dedupe(fields)
+    deduper.sample(cluster_entries, 15000)
+
+    with open(TRAINING_FILE) as training_file:
+        deduper.readTraining(training_file)
+
+    deduper.train()
+
+    return deduper.match(cluster_entries, MATCH_THRESHOLD)
+
+def get_organisation_clusters(org_list):
+    """Build an usable list of clusters to be used
+    when normalizing new entries
+
+    Args:
+        org_list (str): list of all organisations
+        stored on database
+    """
+
+    logger.debug('Generating organisations cluster data')
+
+    cluster_members = {entry['id']: {'name': unidecode.unidecode(entry['name'])}
+                       for entry in org_list}
+    clustered_dupes = _dedup_cluster(cluster_members)
+
+    extended_clusters = []
+    for (_, cluster) in enumerate(clustered_dupes):
+        id_set, _ = cluster
+        cluster_d = [cluster_members[c]['name'] for c in id_set]
+        extended_clusters.append(cluster_d)
+
+    return extended_clusters
+
+def normalize_organisation_name(organisation, org_clusters):
+    """Find a canonical organisation name according to
+    a pre-built set of clusters
+
+    Args:
+        location (str): the organisation to be normalized
+    """
+
+    normalized_organisation = organisation
+    # Try to find the organisation into any of the clusters
+    for cluster in org_clusters:
+        if organisation in cluster:
+            normalized_organisation = max(cluster, key=len)
+            break
+    logger.debug('Organisation "%s" normalized as "%s"', organisation, normalized_organisation)
+    # Return itself if there's no cluster containing that org (org is unique)
+    return normalized_organisation
