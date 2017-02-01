@@ -110,7 +110,7 @@ def process_trials(conn, table, extractors):
                     # if organisation['name'] in stored_organisation_names:
                     #     organisation['name'] = helpers.normalize_organisation_name(
                     #         organisation['name'], organisation_clusters)
-                    organisation['name'] = helpers.normalize_organisation_name(
+                    organisation['name'] = helpers.get_canonical_organisation_name(
                         conn, organisation['name'])
                     org_id = writers.write_organisation(conn, organisation, source_id)
                     if org_id is None:

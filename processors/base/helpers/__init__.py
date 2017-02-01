@@ -329,6 +329,34 @@ def get_canonical_location_name(location):
 
     return current_match
 
+def get_canonical_organisation_name(conn, organisation):
+    """Find a canonical organisation name according to
+    a pre-built set of clusters
+
+    Args:
+        location (str): the organisation to be normalized
+    """
+    CLUSTER_QUERY = "SELECT canonical FROM organisation_clusters WHERE '%s'=ANY(variations)"
+    ORG_QUERY = "SELECT COUNT(*) from organisations WHERE name='%s'"
+
+    normalized_form = None
+    query = CLUSTER_QUERY % organisation
+    # Try to find the organisation in some cluster
+    try:
+        normalized_form = conn['warehouse'].query(query).next()['canonical']
+    except StopIteration:
+        query = ORG_QUERY % organisation
+        # If organisation already exists, return itself
+        if int(conn['database'].query(query).next()['count']) > 0:
+            normalized_form = organisation
+        else:
+            # TODO Check if it's valid to add this overhead to the processors
+            compute_organisation_clusters(conn, new_cluster_entry=organisation)
+            normalized_form = normalize_organisation_name(conn, organisation)
+
+    logger.debug('Organisation "%s" normalized as "%s"', organisation, normalized_form)
+    return normalized_form
+
 def _dedup_cluster(cluster_entries):
     """Sample, train and build organisation clusters
 
@@ -388,30 +416,3 @@ def compute_organisation_clusters(conn, new_cluster_entry=None):
 
     conn['warehouse'].commit()
 
-def normalize_organisation_name(conn, organisation):
-    """Find a canonical organisation name according to
-    a pre-built set of clusters
-
-    Args:
-        location (str): the organisation to be normalized
-    """
-    CLUSTER_QUERY = "SELECT canonical FROM organisation_clusters WHERE '%s'=ANY(variations)"
-    ORG_QUERY = "SELECT COUNT(*) from organisations WHERE name='%s'"
-
-    normalized_form = None
-    query = CLUSTER_QUERY % organisation
-    # Try to find the organisation in some cluster
-    try:
-        normalized_form = conn['warehouse'].query(query).next()['canonical']
-    except StopIteration:
-        query = ORG_QUERY % organisation
-        # If organisation already exists, return itself
-        if int(conn['database'].query(query).next()['count']) > 0:
-            normalized_form = organisation
-        else:
-            # TODO Check if it's valid to add this overhead to the processors
-            compute_organisation_clusters(conn, new_cluster_entry=organisation)
-            normalized_form = normalize_organisation_name(conn, organisation)
-
-    logger.debug('Organisation "%s" normalized as "%s"', organisation, normalized_form)
-    return normalized_form
