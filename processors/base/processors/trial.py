@@ -5,12 +5,16 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import logging
+import os
+import json
 from .. import helpers
 from .. import writers
 logger = logging.getLogger(__name__)
 
 
 # Module API
+
+TRAINING_FILE = os.path.join(os.path.dirname(__file__), '../organisation_cluster.json')
 
 def process_trials(conn, table, extractors):
     """Translate trial records from warehouse to database.
@@ -29,10 +33,7 @@ def process_trials(conn, table, extractors):
     errors = 0
     success = 0
 
-    stored_organisations = list(conn['database']['organisations'].all())
-    stored_organisation_names = [entry['name'] for entry in stored_organisations]
-
-    organisation_clusters = helpers.get_organisation_clusters(stored_organisations)
+    helpers.compute_organisation_clusters(conn)
 
     for record in helpers.iter_rows(conn, 'warehouse', table, orderby='meta_id'):
 
@@ -106,10 +107,8 @@ def process_trials(conn, table, extractors):
                 # Extract and write organisations/relationships
                 organisations = extractors['extract_organisations'](record)
                 for organisation in organisations:
-                    if organisation['name'] in stored_organisation_names:
-                        organisation['name'] = helpers.normalize_organisation_name(
-                            organisation['name'], organisation_clusters)
-                    org_id = writers.write_organisation(conn, organisation, source_id)
+                    org_id = writers.write_organisation(conn, helpers.normalize_organisation_name(
+                        conn, organisation['name']), source_id)
                     if org_id is None:
                         continue
                     writers.write_trial_relationship(

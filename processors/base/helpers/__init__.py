@@ -24,9 +24,7 @@ from . import pybossa_tasks_updater
 logger = logging.getLogger(__name__)
 PyBossaTasksUpdater = pybossa_tasks_updater.PyBossaTasksUpdater
 
-
 # Module API
-
 
 def get_variables(object, filter=None):
     """Exract variables from object to dict using name filter.
@@ -340,7 +338,7 @@ def _dedup_cluster(cluster_entries):
     """
 
     MATCH_THRESHOLD = 0.5
-    TRAINING_FILE = os.path.join(os.path.dirname(__file__), 'data/organisation_training_data.csv')
+    TRAINING_FILE = os.path.join(os.path.dirname(__file__), 'data/organisation_training_data.json')
 
     fields = [{'field' : 'name', 'type': 'String'}]
     deduper = dedupe.Dedupe(fields)
@@ -353,7 +351,7 @@ def _dedup_cluster(cluster_entries):
 
     return deduper.match(cluster_entries, MATCH_THRESHOLD)
 
-def get_organisation_clusters(org_list):
+def compute_organisation_clusters(conn, new_cluster_entry=None):
     """Build an usable list of clusters to be used
     when normalizing new entries
 
@@ -362,34 +360,58 @@ def get_organisation_clusters(org_list):
         stored on database
     """
 
-    logger.debug('Generating organisations cluster data')
+    logger.debug('Recomputing organisations cluster data for further access')
+
+    conn['warehouse'].begin()
+    conn['warehouse']['organisation_clusters'].delete()
+
+    stored_organisations = list(conn['database']['organisations'].all())
 
     cluster_members = {entry['id']: {'name': unidecode.unidecode(entry['name'])}
-                       for entry in org_list}
+                       for entry in stored_organisations}
+
+    if new_cluster_entry:
+        cluster_members[uuid.uuid1().hex] = {'name': new_cluster_entry}
+
     clustered_dupes = _dedup_cluster(cluster_members)
 
-    extended_clusters = []
     for (_, cluster) in enumerate(clustered_dupes):
         id_set, _ = cluster
-        cluster_d = [cluster_members[c]['name'] for c in id_set]
-        extended_clusters.append(cluster_d)
+        cluster_membership = [str(cluster_members[c]['name']) for c in id_set]
 
-    return extended_clusters
+        cluster = {
+            'canonical': max(cluster_membership, key=len).replace("'", "''"),
+            'variations': cluster_membership
+        }
 
-def normalize_organisation_name(organisation, org_clusters):
+        conn['warehouse']['organisation_clusters'].insert(cluster)
+
+    conn['warehouse'].commit()
+
+def normalize_organisation_name(conn, organisation):
     """Find a canonical organisation name according to
     a pre-built set of clusters
 
     Args:
         location (str): the organisation to be normalized
     """
+    CLUSTER_QUERY = "SELECT canonical FROM organisation_clusters WHERE '%s'=ANY(variations)"
+    ORG_QUERY = "SELECT COUNT(*) from organisations WHERE name='%s'"
 
-    normalized_organisation = organisation
-    # Try to find the organisation into any of the clusters
-    for cluster in org_clusters:
-        if organisation in cluster:
-            normalized_organisation = max(cluster, key=len)
-            break
-    logger.debug('Organisation "%s" normalized as "%s"', organisation, normalized_organisation)
-    # Return itself if there's no cluster containing that org (org is unique)
-    return normalized_organisation
+    normalized_form = None
+    query = CLUSTER_QUERY % organisation
+    # Try to find the organisation in some cluster
+    try:
+        normalized_form = conn['warehouse'].query(query).next()['canonical']
+    except StopIteration:
+        query = ORG_QUERY % organisation
+        # If organisation already exists, return itself
+        if int(conn['database'].query(query).next()['count']) > 0:
+            normalized_form = organisation
+        else:
+            # TODO Check if it's valid to add this overhead to the processors
+            compute_organisation_clusters(conn, new_cluster_entry=organisation)
+            normalized_form = normalize_organisation_name(conn, organisation)
+
+    logger.debug('Organisation "%s" normalized as "%s"', organisation, normalized_form)
+    return normalized_form
