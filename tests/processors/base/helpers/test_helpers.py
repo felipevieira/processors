@@ -150,34 +150,34 @@ class TestLocationNormalizer(object):
     def test_location_normalizer(self, test_input, expected):
         assert helpers.get_canonical_location_name(test_input) == expected
 
-# class TestOrganisationNormalizer(object):
-#     @pytest.mark.parametrize("test_input,expected", [
+class TestOrganisationNormalizer(object):
+    @pytest.mark.parametrize("test_input,expected", [
 
-#         # Normalization of locations that already belong to the dictionary
-#         # that contains all organisation data and are not the largest one
-#         ("Justus-Liebig-University", "Justus Liebig University of Giessen"),
-#         ("Royal Liverpool and Broagreen University Hospitals NHS Trust",
-#          "Royal Liverpool and Broadgreen University Hospitals NHS Trust"),
-#         ("Ghent University", "Ghent University Hospital"),
-#         ("University of Oxford Clinical Trials & Research Governance",
-#          "University of Oxford, Clinical Trials and Research Governance Office"),
-#         ("University Medical Centre Nijmegen", "University Medical Centre Nijmegen St Radboud"),
+        # Normalization of locations that already belong to the dictionary
+        # that contains all organisation data and are not the largest one
+        ("Justus-Liebig-University", "Justus Liebig University of Giessen"),
+        ("Royal Liverpool and Broagreen University Hospitals NHS Trust",
+         "Royal Liverpool and Broadgreen University Hospitals NHS Trust"),
+        ("Ghent University", "Ghent University Hospital"),
+        ("University of Oxford Clinical Trials & Research Governance",
+         "University of Oxford, Clinical Trials and Research Governance Office"),
+        ("University Medical Centre Nijmegen", "University Medical Centre Nijmegen St Radboud"),
 
-#         # Normalization of locations that already belong to the dictionary
-#         # that contains all organisation data and are the largest one
-#         ("Justus Liebig University of Giessen", "Justus Liebig University of Giessen"),
-#         ("Royal Liverpool and Broadgreen University Hospitals NHS Trust",
-#          "Royal Liverpool and Broadgreen University Hospitals NHS Trust"),
-#         ("Ghent University Hospital", "Ghent University Hospital"),
+        # Normalization of locations that already belong to the dictionary
+        # that contains all organisation data and are the largest one
+        ("Justus Liebig University of Giessen", "Justus Liebig University of Giessen"),
+        ("Royal Liverpool and Broadgreen University Hospitals NHS Trust",
+         "Royal Liverpool and Broadgreen University Hospitals NHS Trust"),
+        ("Ghent University Hospital", "Ghent University Hospital"),
 
-#         # Normalization of new locations (not contained in the organisation data)
-#         ("Federal University of Campina Grande", "Federal University of Campina Grande"),
-#         ("University of São Paulo", "University of São Paulo"),
-#         ("Gent University", "Ghent University Hospital"),
-#         ("Royal Liverpol and Broadgreen University Hospitals NHS Trust",
-#          "Royal Liverpool and Broadgreen University Hospitals NHS Trust"),
-#         ("JustusLiebigUniversity", "Justus Liebig University of Giessen")])
+        # Normalization of new locations (not contained in the organisation data)
+        ("Federal University of Campina Grande", "Federal University of Campina Grande"),
+        ("University of São Paulo", "University of São Paulo"),
+        ("Gent University", "Ghent University Hospital"),
+        ("Royal Liverpol and Broadgreen University Hospitals NHS Trust",
+         "Royal Liverpool and Broadgreen University Hospitals NHS Trust"),
+        ("JustusLiebigUniversity", "Justus Liebig University of Giessen")])
 
 
-#     def get_canonical_organisation_name(self, test_input, expected):
-#         assert helpers.normalize_organisation_name(test_input) == expected
+    def get_canonical_organisation_name(self, test_input, expected):
+        assert helpers.normalize_organisation_name(test_input) == expected

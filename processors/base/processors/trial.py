@@ -14,8 +14,6 @@ logger = logging.getLogger(__name__)
 
 # Module API
 
-TRAINING_FILE = os.path.join(os.path.dirname(__file__), '../organisation_cluster.json')
-
 def process_trials(conn, table, extractors):
     """Translate trial records from warehouse to database.
 
@@ -107,9 +105,6 @@ def process_trials(conn, table, extractors):
                 # Extract and write organisations/relationships
                 organisations = extractors['extract_organisations'](record)
                 for organisation in organisations:
-                    # if organisation['name'] in stored_organisation_names:
-                    #     organisation['name'] = helpers.normalize_organisation_name(
-                    #         organisation['name'], organisation_clusters)
                     organisation['name'] = helpers.get_canonical_organisation_name(
                         conn, organisation['name'])
                     org_id = writers.write_organisation(conn, organisation, source_id)
