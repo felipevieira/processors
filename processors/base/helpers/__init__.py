@@ -26,6 +26,8 @@ PyBossaTasksUpdater = pybossa_tasks_updater.PyBossaTasksUpdater
 
 # Module API
 
+DISTANCE_SCORER = fuzzywuzzy.fuzz.token_sort_ratio
+
 def get_variables(object, filter=None):
     """Exract variables from object to dict using name filter.
     """
@@ -298,7 +300,6 @@ def get_canonical_location_name(location):
 
     # Extracted from: https://github.com/datasets/country-codes/blob/master/data/country-codes.csv
     CSV_PATH = os.path.join(os.path.dirname(__file__), 'data/countries.csv')
-    DISTANCE_SCORER = fuzzywuzzy.fuzz.token_sort_ratio
     EDIT_DISTANCE_THRESHOLD = 75
 
     cleaned_location = remove_string_punctuation(location)
@@ -336,11 +337,12 @@ def get_canonical_organisation_name(conn, organisation):
     Args:
         location (str): the organisation to be normalized
     """
-    CLUSTER_QUERY = "SELECT canonical FROM organisation_clusters WHERE '%s'=ANY(variations)"
+    SPECIFIC_CLUSTER_QUERY = "SELECT canonical FROM organisation_clusters WHERE '%s'=ANY(variations)"
+    CLUSTER_QUERY = "SELECT canonical FROM organisation_clusters"
     ORG_QUERY = "SELECT COUNT(*) from organisations WHERE name='%s'"
 
     normalized_form = None
-    query = CLUSTER_QUERY % organisation
+    query = SPECIFIC_CLUSTER_QUERY % organisation
     # Try to find the organisation in some cluster
     try:
         normalized_form = conn['warehouse'].query(query).next()['canonical']
@@ -350,9 +352,12 @@ def get_canonical_organisation_name(conn, organisation):
         if int(conn['database'].query(query).next()['count']) > 0:
             normalized_form = organisation
         else:
-            # TODO Check if it's valid to add this overhead to the processors
-            compute_organisation_clusters(conn, new_cluster_entry=organisation)
-            normalized_form = normalize_organisation_name(conn, organisation)
+            # canonicals = [row['canonical'] for row in list(conn['warehouse'].query(CLUSTER_QUERY))]
+            # canonical, score = fuzzywuzzy.process.extractOne(organisation, canonicals, scorer=DISTANCE_SCORER)
+            # TODO: If organisation does not exists, add it to a existent cluster
+            # by comparing it with the clusters centroids (canonical)
+            # CURRENT: Return organisation itself
+            return organisation
 
     logger.debug('Organisation "%s" normalized as "%s"', organisation, normalized_form)
     return normalized_form
@@ -397,7 +402,6 @@ def compute_organisation_clusters(conn, new_cluster_entry=None):
 
     cluster_members = {entry['id']: {'name': unidecode.unidecode(entry['name'])}
                        for entry in stored_organisations}
-
     if new_cluster_entry:
         cluster_members[uuid.uuid1().hex] = {'name': new_cluster_entry}
 

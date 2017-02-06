@@ -24,6 +24,7 @@ from tests.fixtures.api.documents import document
 
 from tests.fixtures.warehouse.cochrane_reviews import cochrane_review
 from tests.fixtures.warehouse.nct import nct_record
+from tests.fixtures.warehouse.organisation_clusters import organisation_cluster
 
 @pytest.fixture
 def conn(request):
@@ -44,6 +45,7 @@ def conn(request):
     api_session = APISession()
     WarehouseSession = sessionmaker(bind=conn['warehouse'].engine)
     warehouse_session = WarehouseSession()
+
     def teardown():
         truncate_database(conn['database'].engine)
         truncate_database(conn['warehouse'].engine)
