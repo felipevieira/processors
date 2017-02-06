@@ -151,9 +151,13 @@ class TestLocationNormalizer(object):
 
 class TestOrganisationNormalizer(object):
     @pytest.mark.parametrize("test_input,expected", [
+        # Locations already in the database
         ("Ghent University", "Ghent University Hospital"),
-        ("Justus Liebig University of Giessen", "Justus Liebig University of Giessen"),
-        ("Federal University of Campina Grande", "Federal University of Campina Grande"),
+        ("Justus Liebig University of Giessen",
+         "Justus Liebig University of Giessen"),
+        # Locations to be added to the database
+        ("Federal University of Campina Grande",
+         "Federal University of Campina Grande"),
     ])
 
     @pytest.mark.usefixtures('organisation_cluster')

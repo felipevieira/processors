@@ -52,7 +52,6 @@ def slugify_string(string):
 class JSONEncoder(json.JSONEncoder):
     """JSON encoder with datetime, date set support.
     """
-
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
             return obj.strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -369,9 +368,9 @@ def _dedup_cluster(cluster_entries):
         cluster_entries (str): a list of candidates to
         be grouped in equivalent sets
     """
-
     MATCH_THRESHOLD = 0.5
-    TRAINING_FILE = os.path.join(os.path.dirname(__file__), 'data/organisation_training_data.json')
+    TRAINING_FILE = os.path.join(os.path.dirname(__file__),
+                                 'data/organisation_training_data.json')
 
     fields = [{'field' : 'name', 'type': 'String'}]
     deduper = dedupe.Dedupe(fields)
@@ -392,7 +391,6 @@ def compute_organisation_clusters(conn, new_cluster_entry=None):
         org_list (str): list of all organisations
         stored on database
     """
-
     logger.debug('Recomputing organisations cluster data for further access')
 
     conn['warehouse'].begin()
@@ -400,7 +398,7 @@ def compute_organisation_clusters(conn, new_cluster_entry=None):
 
     stored_organisations = list(conn['database']['organisations'].all())
 
-    cluster_members = {entry['id']: {'name': unidecode.unidecode(entry['name'])}
+    cluster_members = {entry['id']:{'name': unidecode.unidecode(entry['name'])}
                        for entry in stored_organisations}
     if new_cluster_entry:
         cluster_members[uuid.uuid1().hex] = {'name': new_cluster_entry}
