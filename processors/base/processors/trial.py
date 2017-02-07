@@ -5,8 +5,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import logging
-import os
-import json
 from .. import helpers
 from .. import writers
 logger = logging.getLogger(__name__)
@@ -30,8 +28,6 @@ def process_trials(conn, table, extractors):
 
     errors = 0
     success = 0
-
-    helpers.compute_organisation_clusters(conn)
 
     for record in helpers.iter_rows(conn, 'warehouse', table, orderby='meta_id'):
 

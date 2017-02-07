@@ -12,7 +12,6 @@ from processors.base.processors.trial import process_trials
 
 
 class TestTrialProcessor(object):
-    @pytest.mark.usefixtures('organisation_cluster')
     def test_updates_which_record_is_primary(self, conn, extractors, trial, record,
         nct_record, euctr_source):
 

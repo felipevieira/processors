@@ -28,6 +28,7 @@ PyBossaTasksUpdater = pybossa_tasks_updater.PyBossaTasksUpdater
 
 DISTANCE_SCORER = fuzzywuzzy.fuzz.token_sort_ratio
 
+
 def get_variables(object, filter=None):
     """Exract variables from object to dict using name filter.
     """
@@ -314,8 +315,10 @@ def get_canonical_location_name(location):
                 relevant_info = [unicode(country[field], encoding='utf-8')
                                  for field in reader.fieldnames[0:5]]
 
-                location_info = [remove_string_punctuation(location_info) for location_info in relevant_info]
-                _, score = fuzzywuzzy.process.extractOne(cleaned_location, location_info, scorer=DISTANCE_SCORER)
+                location_info = [remove_string_punctuation(location_info)
+                                 for location_info in relevant_info]
+                _, score = fuzzywuzzy.process.extractOne(
+                    cleaned_location, location_info, scorer=DISTANCE_SCORER)
 
                 if score > current_score:
                     current_match = iso3166.countries.get(country['ISO3166-1-Alpha-3']).name
@@ -329,6 +332,7 @@ def get_canonical_location_name(location):
 
     return current_match
 
+
 def get_canonical_organisation_name(conn, organisation):
     """Find a canonical organisation name according to
     a pre-built set of clusters
@@ -336,12 +340,13 @@ def get_canonical_organisation_name(conn, organisation):
     Args:
         location (str): the organisation to be normalized
     """
-    SPECIFIC_CLUSTER_QUERY = "SELECT canonical FROM organisation_clusters WHERE '%s'=ANY(variations)"
-    CLUSTER_QUERY = "SELECT canonical FROM organisation_clusters"
+    CLUSTER_QUERY = "SELECT canonical " + \
+                    "FROM organisation_clusters " + \
+                    "WHERE '%s'=ANY(variations)"
     ORG_QUERY = "SELECT COUNT(*) from organisations WHERE name='%s'"
 
-    normalized_form = None
-    query = SPECIFIC_CLUSTER_QUERY % organisation
+    normalized_form = organisation
+    query = CLUSTER_QUERY % organisation
     # Try to find the organisation in some cluster
     try:
         normalized_form = conn['warehouse'].query(query).next()['canonical']
@@ -351,15 +356,11 @@ def get_canonical_organisation_name(conn, organisation):
         if int(conn['database'].query(query).next()['count']) > 0:
             normalized_form = organisation
         else:
-            # canonicals = [row['canonical'] for row in list(conn['warehouse'].query(CLUSTER_QUERY))]
-            # canonical, score = fuzzywuzzy.process.extractOne(organisation, canonicals, scorer=DISTANCE_SCORER)
-            # TODO: If organisation does not exists, add it to a existent cluster
-            # by comparing it with the clusters centroids (canonical)
-            # CURRENT: Return organisation itself
             return organisation
 
     logger.debug('Organisation "%s" normalized as "%s"', organisation, normalized_form)
     return normalized_form
+
 
 def _dedup_cluster(cluster_entries):
     """Sample, train and build organisation clusters
@@ -368,11 +369,11 @@ def _dedup_cluster(cluster_entries):
         cluster_entries (str): a list of candidates to
         be grouped in equivalent sets
     """
-    MATCH_THRESHOLD = 0.5
+    MATCH_THRESHOLD = 0.75
     TRAINING_FILE = os.path.join(os.path.dirname(__file__),
                                  'data/organisation_training_data.json')
 
-    fields = [{'field' : 'name', 'type': 'String'}]
+    fields = [{'field': 'name', 'type': 'String'}]
     deduper = dedupe.Dedupe(fields)
     deduper.sample(cluster_entries, 15000)
 
@@ -383,8 +384,9 @@ def _dedup_cluster(cluster_entries):
 
     return deduper.match(cluster_entries, MATCH_THRESHOLD)
 
-def compute_organisation_clusters(conn, new_cluster_entry=None):
-    """Build an usable list of clusters to be used
+
+def update_organisation_clusters(conn, new_cluster_entry=None):
+    """Build a readable list of organisation clusters to be used
     when normalizing new entries
 
     Args:
@@ -398,7 +400,7 @@ def compute_organisation_clusters(conn, new_cluster_entry=None):
 
     stored_organisations = list(conn['database']['organisations'].all())
 
-    cluster_members = {entry['id']:{'name': unidecode.unidecode(entry['name'])}
+    cluster_members = {entry['id']: {'name': unidecode.unidecode(entry['name'])}
                        for entry in stored_organisations}
     if new_cluster_entry:
         cluster_members[uuid.uuid1().hex] = {'name': new_cluster_entry}
@@ -417,4 +419,3 @@ def compute_organisation_clusters(conn, new_cluster_entry=None):
         conn['warehouse']['organisation_clusters'].insert(cluster)
 
     conn['warehouse'].commit()
-
