@@ -73,6 +73,7 @@ six==1.10.0               # via datapackage, dataset, jsonlines, jsontableschema
 sqlalchemy==1.1.5
 tabulator==0.14.0         # via datapackage, jsontableschema, jsontableschema-sql
 unicodecsv==0.14.1        # via datapackage, jsontableschema, tabulator
+unidecode==0.4.20
 xlrd==1.0.0               # via tabulator
 zope.index==4.2.0         # via dedupe
 zope.interface==4.3.3     # via btrees, persistent, zope.index

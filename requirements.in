@@ -13,4 +13,5 @@ fuzzywuzzy
 python-Levenshtein
 iso3166
 raven
+unidecode
 dedupe
