@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 
 import logging
 from .. import helpers
+from .. import config
 from .. import writers
 logger = logging.getLogger(__name__)
 
@@ -26,9 +27,7 @@ def process_trials(conn, table, extractors):
     source = extractors['extract_source'](None)
     source_id = writers.write_source(conn, source)
 
-    errors = 0
     success = 0
-
     for record in helpers.iter_rows(conn, 'warehouse', table, orderby='meta_id'):
 
         conn['database'].begin()
@@ -55,15 +54,21 @@ def process_trials(conn, table, extractors):
             # Extract and write documents
             extract_documents = extractors.get('extract_documents')
             if extract_documents:
+
+                # Extract and write document category
+                doc_category = extractors.get('extract_document_category')(record)
+                doc_category_id = writers.write_document_category(conn, doc_category)
                 for document in extract_documents(record):
                     document.update({
                         'trial_id': trial_id,
                         'source_id': source_id,
+                        'document_category_id': doc_category_id,
                     })
                     writers.write_document(conn, document)
 
             # Write other entities
             if is_primary:
+
                 # Delete existent relationships
                 conn['database']['trials_conditions'].delete(trial_id=trial_id)
                 conn['database']['trials_interventions'].delete(trial_id=trial_id)
@@ -118,15 +123,14 @@ def process_trials(conn, table, extractors):
                     writers.write_trial_relationship(
                         conn, 'person', person, person_id, trial_id)
 
-        except Exception as exception:
-            errors += 1
+        except Exception:
             conn['database'].rollback()
-            logger.exception('Processing error: %s [%s]',
-                             repr(exception), errors)
-
+            config.SENTRY.captureException(extra={
+                'record': record,
+            })
         else:
             success += 1
             conn['database'].commit()
             if not success % 100:
                 logger.info('Processed %s trials from %s',
-                            success, table)
+                    success, table)

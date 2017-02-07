@@ -24,9 +24,10 @@ def process(conf, conn):
     for record in base.helpers.iter_rows(conn, 'warehouse', 'fda_dap', orderby='id'):
         try:
             processor.process_record(record, source_id)
-        except Exception as exception:
-            logger.exception('Failed to process record %s with error: %s',
-                             record['meta_id'], repr(exception), exc_info=True)
+        except Exception:
+            base.config.SENTRY.captureException(extra={
+                'meta_id': record['meta_id'],
+            })
 
 
 def _create_source(conn):
@@ -46,6 +47,7 @@ class FDADAPProcessor(object):
 
     def process_record(self, record, source_id):
         fda_approval = self._write_fda_approval(record)
+        document_category_id = self._upsert_document_category()
 
         for document in record['documents']:
             file_id = self._upsert_file(document, fda_approval)
@@ -54,7 +56,7 @@ class FDADAPProcessor(object):
             data.update({
                 'source_id': 'fda',
                 'name': document['name'],
-                'type': 'other',
+                'document_category_id': document_category_id,
                 'file_id': file_id,
                 'fda_approval_id': fda_approval['id'],
             })
@@ -88,6 +90,13 @@ class FDADAPProcessor(object):
                 logging.debug('Merged PDF uploaded to: %s' % file_data['source_url'])
 
         return base.writers.write_file(self._conn, file_data)
+
+    def _upsert_document_category(self):
+        document_category = {
+            'id': 20,
+            'name': 'Other',
+        }
+        return base.writers.write_document_category(self._conn, document_category)
 
     def _write_fda_approval(self, fda_approval):
         '''Creates an FDA Approval and the related FDA Application if
