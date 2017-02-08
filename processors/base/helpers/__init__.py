@@ -26,8 +26,6 @@ PyBossaTasksUpdater = pybossa_tasks_updater.PyBossaTasksUpdater
 
 # Module API
 
-DISTANCE_SCORER = fuzzywuzzy.fuzz.token_sort_ratio
-
 
 def get_variables(object, filter=None):
     """Exract variables from object to dict using name filter.
@@ -300,6 +298,7 @@ def get_canonical_location_name(location):
 
     # Extracted from: https://github.com/datasets/country-codes/blob/master/data/country-codes.csv
     CSV_PATH = os.path.join(os.path.dirname(__file__), 'data/countries.csv')
+    DISTANCE_SCORER = fuzzywuzzy.fuzz.token_sort_ratio
     EDIT_DISTANCE_THRESHOLD = 75
 
     cleaned_location = remove_string_punctuation(location)
@@ -338,7 +337,8 @@ def get_canonical_organisation_name(conn, organisation):
     a pre-built set of clusters
 
     Args:
-        location (str): the organisation to be normalized
+        conn (dict): connection dict
+        organisation (str): the organisation to be normalized
     """
     CLUSTER_QUERY = "SELECT canonical " + \
                     "FROM organisation_clusters " + \
