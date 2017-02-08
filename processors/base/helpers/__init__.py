@@ -343,22 +343,17 @@ def get_canonical_organisation_name(conn, organisation):
     CLUSTER_QUERY = "SELECT canonical " + \
                     "FROM organisation_clusters " + \
                     "WHERE '%s'=ANY(variations)"
-    ORG_QUERY = "SELECT COUNT(*) from organisations WHERE name='%s'"
 
     normalized_form = organisation
-    query = CLUSTER_QUERY % organisation
+
     # Try to find the organisation in some cluster
     try:
         normalized_form = conn['warehouse'].query(query).next()['canonical']
+        logger.debug('Organisation "%s" normalized as "%s"', organisation, normalized_form)
     except StopIteration:
-        query = ORG_QUERY % organisation
-        # If organisation already exists, return itself
-        if int(conn['database'].query(query).next()['count']) > 0:
-            normalized_form = organisation
-        else:
-            return organisation
+        logger.debug('Organisation "%s" not normalized', organisation)
+        pass
 
-    logger.debug('Organisation "%s" normalized as "%s"', organisation, normalized_form)
     return normalized_form
 
 
@@ -366,16 +361,17 @@ def _dedup_cluster(cluster_entries):
     """Sample, train and build organisation clusters
 
     Args:
-        cluster_entries (str): a list of candidates to
+        cluster_entries (list): a list of candidates to
         be grouped in equivalent sets
     """
+    SAMPLE_SIZE = 10000
     MATCH_THRESHOLD = 0.75
     TRAINING_FILE = os.path.join(os.path.dirname(__file__),
                                  'data/organisation_training_data.json')
 
     fields = [{'field': 'name', 'type': 'String'}]
     deduper = dedupe.Dedupe(fields)
-    deduper.sample(cluster_entries, 15000)
+    deduper.sample(cluster_entries, SAMPLE_SIZE)
 
     with open(TRAINING_FILE) as training_file:
         deduper.readTraining(training_file)
@@ -385,13 +381,12 @@ def _dedup_cluster(cluster_entries):
     return deduper.match(cluster_entries, MATCH_THRESHOLD)
 
 
-def update_organisation_clusters(conn, new_cluster_entry=None):
+def update_organisation_clusters(conn):
     """Build a readable list of organisation clusters to be used
     when normalizing new entries
 
     Args:
-        org_list (str): list of all organisations
-        stored on database
+        conn (dict): connection dict
     """
     logger.debug('Recomputing organisations cluster data for further access')
 
@@ -402,8 +397,6 @@ def update_organisation_clusters(conn, new_cluster_entry=None):
 
     cluster_members = {entry['id']: {'name': unidecode.unidecode(entry['name'])}
                        for entry in stored_organisations}
-    if new_cluster_entry:
-        cluster_members[uuid.uuid1().hex] = {'name': new_cluster_entry}
 
     clustered_dupes = _dedup_cluster(cluster_members)
 

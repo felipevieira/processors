@@ -33,7 +33,7 @@ def write_organisation(conn, organisation, source_id, trial_id=None):
     timestamp = datetime.datetime.utcnow()
 
     # Get name
-    name = helpers.clean_string(organisation['name'])
+    name = helpers.get_canonical_organisation_name(organisation['name'])
     if len(name) <= 1:
         return None
 

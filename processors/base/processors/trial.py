@@ -106,8 +106,6 @@ def process_trials(conn, table, extractors):
                 # Extract and write organisations/relationships
                 organisations = extractors['extract_organisations'](record)
                 for organisation in organisations:
-                    organisation['name'] = helpers.get_canonical_organisation_name(
-                        conn, organisation['name'])
                     org_id = writers.write_organisation(conn, organisation, source_id)
                     if org_id is None:
                         continue
