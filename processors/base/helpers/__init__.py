@@ -342,13 +342,13 @@ def get_canonical_organisation_name(conn, organisation):
     """
     CLUSTER_QUERY = "SELECT canonical " + \
                     "FROM organisation_clusters " + \
-                    "WHERE '%s'=ANY(variations)"
+                    "WHERE '%s'=ANY(variations)" % organisation
 
     normalized_form = organisation
 
     # Try to find the organisation in some cluster
     try:
-        normalized_form = conn['warehouse'].query(query).next()['canonical']
+        normalized_form = conn['warehouse'].query(CLUSTER_QUERY).next()['canonical']
         logger.debug('Organisation "%s" normalized as "%s"', organisation, normalized_form)
     except StopIteration:
         logger.debug('Organisation "%s" not normalized', organisation)
@@ -401,7 +401,7 @@ def update_organisation_clusters(conn):
     clustered_dupes = _dedup_cluster(cluster_members)
 
     for (_, cluster) in enumerate(clustered_dupes):
-        id_set, _ = cluster
+        id_set = cluster[0]
         cluster_membership = [str(cluster_members[c]['name']) for c in id_set]
 
         cluster = {
