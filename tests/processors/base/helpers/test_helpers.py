@@ -151,11 +151,14 @@ class TestLocationNormalizer(object):
 
 class TestOrganisationNormalizer(object):
     @pytest.mark.parametrize("test_input,expected", [
-        # Locations already in the database
+        # Organisation normalized with a longer equivalent
         ("Ghent University", "Ghent University Hospital"),
+
+        # Organisation normalized as it is (the longest available form)
         ("Justus Liebig University of Giessen",
          "Justus Liebig University of Giessen"),
-        # Locations to be added to the database
+
+         # New organisation non-normalized
         ("Federal University of Campina Grande",
          "Federal University of Campina Grande"),
     ])
