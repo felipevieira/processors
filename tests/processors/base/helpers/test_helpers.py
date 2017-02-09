@@ -133,7 +133,7 @@ class TestLocationNormalizer(object):
 
         # Locations normalized by ISO-3166 acronym standards
         ("US", "United States"),
-        ("UK", "United Kingdom"),
+        ("UK", "United Kingdom of Great Britain and Northern Ireland"),
 
         # Locations normalized by Levenshtein distance (name)
         ("Chnia", "China"),
