@@ -2,16 +2,12 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.5.5
--- Dumped by pg_dump version 9.5.5
-
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SET check_function_bodies = false;
 SET client_min_messages = warning;
-SET row_security = off;
 
 SET search_path = public, pg_catalog;
 
@@ -48,11 +44,10 @@ ALTER TABLE IF EXISTS ONLY public.fda_applications DROP CONSTRAINT IF EXISTS fda
 ALTER TABLE IF EXISTS ONLY public.documents DROP CONSTRAINT IF EXISTS documents_source_id_foreign;
 ALTER TABLE IF EXISTS ONLY public.documents DROP CONSTRAINT IF EXISTS documents_file_id_foreign;
 ALTER TABLE IF EXISTS ONLY public.documents DROP CONSTRAINT IF EXISTS documents_fda_approval_id_foreign;
+ALTER TABLE IF EXISTS ONLY public.documents DROP CONSTRAINT IF EXISTS documents_document_category_id_foreign;
 DROP INDEX IF EXISTS public.trials_documents_document_id_index;
 DROP INDEX IF EXISTS public.trialrecords_trial_id_index;
 DROP INDEX IF EXISTS public.records_identifiers_index;
-DROP INDEX IF EXISTS public.non_fda_documents_type_source_url_unique;
-DROP INDEX IF EXISTS public.non_fda_documents_type_file_id_unique;
 DROP INDEX IF EXISTS public.interventions_fda_application_number_index;
 DROP INDEX IF EXISTS public.fda_approvals_type_index;
 ALTER TABLE IF EXISTS ONLY public.trials_publications DROP CONSTRAINT IF EXISTS trials_publications_pkey;
@@ -71,6 +66,7 @@ ALTER TABLE IF EXISTS ONLY public.risk_of_biases_risk_of_bias_criterias DROP CON
 ALTER TABLE IF EXISTS ONLY public.risk_of_biases DROP CONSTRAINT IF EXISTS risk_of_biases_pkey;
 ALTER TABLE IF EXISTS ONLY public.risk_of_bias_criterias DROP CONSTRAINT IF EXISTS risk_of_bias_criterias_pkey;
 ALTER TABLE IF EXISTS ONLY public.risk_of_bias_criterias DROP CONSTRAINT IF EXISTS risk_of_bias_criterias_name_unique;
+ALTER TABLE IF EXISTS ONLY public.records DROP CONSTRAINT IF EXISTS records_source_url_unique;
 ALTER TABLE IF EXISTS ONLY public.publications DROP CONSTRAINT IF EXISTS publications_slug_unique;
 ALTER TABLE IF EXISTS ONLY public.publications DROP CONSTRAINT IF EXISTS publications_pkey;
 ALTER TABLE IF EXISTS ONLY public.conditions DROP CONSTRAINT IF EXISTS problems_slug_unique;
@@ -80,7 +76,6 @@ ALTER TABLE IF EXISTS ONLY public.persons DROP CONSTRAINT IF EXISTS persons_pkey
 ALTER TABLE IF EXISTS ONLY public.organisations DROP CONSTRAINT IF EXISTS organisations_slug_unique;
 ALTER TABLE IF EXISTS ONLY public.organisations DROP CONSTRAINT IF EXISTS organisations_pkey;
 ALTER TABLE IF EXISTS ONLY public.organisations DROP CONSTRAINT IF EXISTS organisations_name_unique;
-ALTER TABLE IF EXISTS ONLY public.organisation DROP CONSTRAINT IF EXISTS organisation_pkey;
 ALTER TABLE IF EXISTS ONLY public.locations DROP CONSTRAINT IF EXISTS locations_slug_unique;
 ALTER TABLE IF EXISTS ONLY public.locations DROP CONSTRAINT IF EXISTS locations_pkey;
 ALTER TABLE IF EXISTS ONLY public.locations DROP CONSTRAINT IF EXISTS locations_name_type_unique;
@@ -97,10 +92,9 @@ ALTER TABLE IF EXISTS ONLY public.fda_approvals DROP CONSTRAINT IF EXISTS fda_ap
 ALTER TABLE IF EXISTS ONLY public.fda_applications DROP CONSTRAINT IF EXISTS fda_applications_pkey;
 ALTER TABLE IF EXISTS ONLY public.documents DROP CONSTRAINT IF EXISTS documents_pkey;
 ALTER TABLE IF EXISTS ONLY public.documents DROP CONSTRAINT IF EXISTS documents_fda_approval_id_file_id_name_unique;
-ALTER TABLE IF EXISTS ONLY public.cochrane_reviews DROP CONSTRAINT IF EXISTS cochrane_reviews_pkey;
-ALTER TABLE IF EXISTS public.organisation ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS ONLY public.document_categories DROP CONSTRAINT IF EXISTS document_categories_pkey;
+ALTER TABLE IF EXISTS ONLY public.document_categories DROP CONSTRAINT IF EXISTS document_categories_name_group_unique;
 ALTER TABLE IF EXISTS public.knex_migrations ALTER COLUMN id DROP DEFAULT;
-ALTER TABLE IF EXISTS public.cochrane_reviews ALTER COLUMN id DROP DEFAULT;
 DROP TABLE IF EXISTS public.trials_publications;
 DROP TABLE IF EXISTS public.trials_persons;
 DROP TABLE IF EXISTS public.trials_organisations;
@@ -117,8 +111,6 @@ DROP TABLE IF EXISTS public.records;
 DROP TABLE IF EXISTS public.publications;
 DROP TABLE IF EXISTS public.persons;
 DROP TABLE IF EXISTS public.organisations;
-DROP SEQUENCE IF EXISTS public.organisation_id_seq;
-DROP TABLE IF EXISTS public.organisation;
 DROP TABLE IF EXISTS public.locations;
 DROP TABLE IF EXISTS public.knex_migrations_lock;
 DROP SEQUENCE IF EXISTS public.knex_migrations_id_seq;
@@ -128,25 +120,8 @@ DROP TABLE IF EXISTS public.files;
 DROP TABLE IF EXISTS public.fda_approvals;
 DROP TABLE IF EXISTS public.fda_applications;
 DROP TABLE IF EXISTS public.documents;
+DROP TABLE IF EXISTS public.document_categories;
 DROP TABLE IF EXISTS public.conditions;
-DROP SEQUENCE IF EXISTS public.cochrane_reviews_id_seq;
-DROP TABLE IF EXISTS public.cochrane_reviews;
-DROP TYPE IF EXISTS public.trial_record_role;
-DROP TYPE IF EXISTS public.trial_publication_role;
-DROP TYPE IF EXISTS public.trial_problem_role;
-DROP TYPE IF EXISTS public.trial_person_role;
-DROP TYPE IF EXISTS public.trial_organisation_role;
-DROP TYPE IF EXISTS public.trial_location_role;
-DROP TYPE IF EXISTS public.trial_intervention_role;
-DROP TYPE IF EXISTS public.trial_document_role;
-DROP TYPE IF EXISTS public.source_type;
-DROP TYPE IF EXISTS public.record_type;
-DROP TYPE IF EXISTS public.publication_type;
-DROP TYPE IF EXISTS public.problem_type;
-DROP TYPE IF EXISTS public.person_type;
-DROP TYPE IF EXISTS public.organisation_type;
-DROP TYPE IF EXISTS public.location_type;
-DROP TYPE IF EXISTS public.intervention_type;
 DROP EXTENSION IF EXISTS plpgsql;
 DROP SCHEMA IF EXISTS public;
 --
@@ -179,206 +154,12 @@ COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 SET search_path = public, pg_catalog;
 
---
--- Name: intervention_type; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE intervention_type AS ENUM (
-    'drug',
-    'other'
-);
-
-
---
--- Name: location_type; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE location_type AS ENUM (
-    'country',
-    'city',
-    'other'
-);
-
-
---
--- Name: organisation_type; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE organisation_type AS ENUM (
-    'other'
-);
-
-
---
--- Name: person_type; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE person_type AS ENUM (
-    'other'
-);
-
-
---
--- Name: problem_type; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE problem_type AS ENUM (
-    'condition',
-    'other'
-);
-
-
---
--- Name: publication_type; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE publication_type AS ENUM (
-    'other'
-);
-
-
---
--- Name: record_type; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE record_type AS ENUM (
-    'trial',
-    'other'
-);
-
-
---
--- Name: source_type; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE source_type AS ENUM (
-    'register',
-    'other'
-);
-
-
---
--- Name: trial_document_role; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE trial_document_role AS ENUM (
-    'other'
-);
-
-
---
--- Name: trial_intervention_role; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE trial_intervention_role AS ENUM (
-    'other'
-);
-
-
---
--- Name: trial_location_role; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE trial_location_role AS ENUM (
-    'recruitment_countries',
-    'other'
-);
-
-
---
--- Name: trial_organisation_role; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE trial_organisation_role AS ENUM (
-    'primary_sponsor',
-    'sponsor',
-    'funder',
-    'other'
-);
-
-
---
--- Name: trial_person_role; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE trial_person_role AS ENUM (
-    'principal_investigator',
-    'public_queries',
-    'scientific_queries',
-    'other'
-);
-
-
---
--- Name: trial_problem_role; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE trial_problem_role AS ENUM (
-    'other'
-);
-
-
---
--- Name: trial_publication_role; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE trial_publication_role AS ENUM (
-    'other'
-);
-
-
---
--- Name: trial_record_role; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE trial_record_role AS ENUM (
-    'primary',
-    'secondary',
-    'other'
-);
-
-
 SET default_tablespace = '';
 
 SET default_with_oids = false;
 
 --
--- Name: cochrane_reviews; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE cochrane_reviews (
-    id integer NOT NULL,
-    study_id text,
-    refs text,
-    study_type text,
-    file_name text,
-    meta_source text,
-    robs text,
-    doi_id text
-);
-
-
---
--- Name: cochrane_reviews_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE cochrane_reviews_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: cochrane_reviews_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE cochrane_reviews_id_seq OWNED BY cochrane_reviews.id;
-
-
---
--- Name: conditions; Type: TABLE; Schema: public; Owner: -
+-- Name: conditions; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE conditions (
@@ -394,24 +175,34 @@ CREATE TABLE conditions (
 
 
 --
--- Name: documents; Type: TABLE; Schema: public; Owner: -
+-- Name: document_categories; Type: TABLE; Schema: public; Owner: -; Tablespace:
+--
+
+CREATE TABLE document_categories (
+    id integer NOT NULL,
+    name text NOT NULL,
+    "group" text
+);
+
+
+--
+-- Name: documents; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE documents (
     id uuid NOT NULL,
     source_id text,
     name text NOT NULL,
-    type text NOT NULL,
     fda_approval_id text,
     file_id uuid,
     source_url text,
-    CONSTRAINT documents_type_check CHECK ((type = ANY (ARRAY['csr'::text, 'csr_synopsis'::text, 'epar_segment'::text, 'blank_consent_form'::text, 'patient_information_sheet'::text, 'blank_case_report_form'::text, 'results'::text, 'other'::text]))),
+    document_category_id integer NOT NULL,
     CONSTRAINT file_id_xor_source_url_check CHECK ((((file_id IS NULL) AND (source_url IS NOT NULL)) OR ((file_id IS NOT NULL) AND (source_url IS NULL))))
 );
 
 
 --
--- Name: fda_applications; Type: TABLE; Schema: public; Owner: -
+-- Name: fda_applications; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE fda_applications (
@@ -425,7 +216,7 @@ CREATE TABLE fda_applications (
 
 
 --
--- Name: fda_approvals; Type: TABLE; Schema: public; Owner: -
+-- Name: fda_approvals; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE fda_approvals (
@@ -441,7 +232,7 @@ CREATE TABLE fda_approvals (
 
 
 --
--- Name: files; Type: TABLE; Schema: public; Owner: -
+-- Name: files; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE files (
@@ -454,7 +245,7 @@ CREATE TABLE files (
 
 
 --
--- Name: interventions; Type: TABLE; Schema: public; Owner: -
+-- Name: interventions; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE interventions (
@@ -474,7 +265,7 @@ CREATE TABLE interventions (
 
 
 --
--- Name: knex_migrations; Type: TABLE; Schema: public; Owner: -
+-- Name: knex_migrations; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE knex_migrations (
@@ -505,7 +296,7 @@ ALTER SEQUENCE knex_migrations_id_seq OWNED BY knex_migrations.id;
 
 
 --
--- Name: knex_migrations_lock; Type: TABLE; Schema: public; Owner: -
+-- Name: knex_migrations_lock; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE knex_migrations_lock (
@@ -514,7 +305,7 @@ CREATE TABLE knex_migrations_lock (
 
 
 --
--- Name: locations; Type: TABLE; Schema: public; Owner: -
+-- Name: locations; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE locations (
@@ -530,35 +321,7 @@ CREATE TABLE locations (
 
 
 --
--- Name: organisation; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE organisation (
-    id integer NOT NULL
-);
-
-
---
--- Name: organisation_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE organisation_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: organisation_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE organisation_id_seq OWNED BY organisation.id;
-
-
---
--- Name: organisations; Type: TABLE; Schema: public; Owner: -
+-- Name: organisations; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE organisations (
@@ -572,7 +335,7 @@ CREATE TABLE organisations (
 
 
 --
--- Name: persons; Type: TABLE; Schema: public; Owner: -
+-- Name: persons; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE persons (
@@ -586,7 +349,7 @@ CREATE TABLE persons (
 
 
 --
--- Name: publications; Type: TABLE; Schema: public; Owner: -
+-- Name: publications; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE publications (
@@ -605,14 +368,13 @@ CREATE TABLE publications (
 
 
 --
--- Name: records; Type: TABLE; Schema: public; Owner: -
+-- Name: records; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE records (
     id uuid NOT NULL,
     source_id text NOT NULL,
     source_url text NOT NULL,
-    source_data jsonb NOT NULL,
     identifiers jsonb NOT NULL,
     registration_date date,
     public_title text NOT NULL,
@@ -635,14 +397,16 @@ CREATE TABLE records (
     trial_id uuid,
     status text,
     completion_date date,
+    results_exemption_date date,
+    last_verification_date date,
+    is_primary boolean DEFAULT false,
     CONSTRAINT records_recruitment_status_check CHECK ((recruitment_status = ANY (ARRAY['recruiting'::text, 'not_recruiting'::text, 'unknown'::text, 'other'::text]))),
     CONSTRAINT records_status_check CHECK ((status = ANY (ARRAY['ongoing'::text, 'withdrawn'::text, 'suspended'::text, 'terminated'::text, 'complete'::text, 'other'::text]))),
     CONSTRAINT trialrecords_gender_check CHECK ((gender = ANY (ARRAY['both'::text, 'male'::text, 'female'::text])))
 );
 
-
 --
--- Name: risk_of_bias_criterias; Type: TABLE; Schema: public; Owner: -
+-- Name: risk_of_bias_criterias; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE risk_of_bias_criterias (
@@ -654,7 +418,7 @@ CREATE TABLE risk_of_bias_criterias (
 
 
 --
--- Name: risk_of_biases; Type: TABLE; Schema: public; Owner: -
+-- Name: risk_of_biases; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE risk_of_biases (
@@ -669,7 +433,7 @@ CREATE TABLE risk_of_biases (
 
 
 --
--- Name: risk_of_biases_risk_of_bias_criterias; Type: TABLE; Schema: public; Owner: -
+-- Name: risk_of_biases_risk_of_bias_criterias; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE risk_of_biases_risk_of_bias_criterias (
@@ -681,7 +445,7 @@ CREATE TABLE risk_of_biases_risk_of_bias_criterias (
 
 
 --
--- Name: sources; Type: TABLE; Schema: public; Owner: -
+-- Name: sources; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE sources (
@@ -695,9 +459,8 @@ CREATE TABLE sources (
     CONSTRAINT sources_type_check CHECK ((type = ANY (ARRAY['register'::text, 'other'::text])))
 );
 
-
 --
--- Name: trials; Type: TABLE; Schema: public; Owner: -
+-- Name: trials; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE trials (
@@ -724,6 +487,7 @@ CREATE TABLE trials (
     source_id text,
     status text,
     completion_date date,
+    results_exemption_date date,
     CONSTRAINT trials_gender_check CHECK ((gender = ANY (ARRAY['both'::text, 'male'::text, 'female'::text]))),
     CONSTRAINT trials_recruitment_status_check CHECK ((recruitment_status = ANY (ARRAY['recruiting'::text, 'not_recruiting'::text, 'unknown'::text, 'other'::text]))),
     CONSTRAINT trials_status_check CHECK ((status = ANY (ARRAY['ongoing'::text, 'withdrawn'::text, 'suspended'::text, 'terminated'::text, 'complete'::text, 'other'::text])))
@@ -731,7 +495,7 @@ CREATE TABLE trials (
 
 
 --
--- Name: trials_conditions; Type: TABLE; Schema: public; Owner: -
+-- Name: trials_conditions; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE trials_conditions (
@@ -741,7 +505,7 @@ CREATE TABLE trials_conditions (
 
 
 --
--- Name: trials_documents; Type: TABLE; Schema: public; Owner: -
+-- Name: trials_documents; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE trials_documents (
@@ -751,7 +515,7 @@ CREATE TABLE trials_documents (
 
 
 --
--- Name: trials_interventions; Type: TABLE; Schema: public; Owner: -
+-- Name: trials_interventions; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE trials_interventions (
@@ -761,7 +525,7 @@ CREATE TABLE trials_interventions (
 
 
 --
--- Name: trials_locations; Type: TABLE; Schema: public; Owner: -
+-- Name: trials_locations; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE trials_locations (
@@ -773,7 +537,7 @@ CREATE TABLE trials_locations (
 
 
 --
--- Name: trials_organisations; Type: TABLE; Schema: public; Owner: -
+-- Name: trials_organisations; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE trials_organisations (
@@ -785,7 +549,7 @@ CREATE TABLE trials_organisations (
 
 
 --
--- Name: trials_persons; Type: TABLE; Schema: public; Owner: -
+-- Name: trials_persons; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE trials_persons (
@@ -797,7 +561,7 @@ CREATE TABLE trials_persons (
 
 
 --
--- Name: trials_publications; Type: TABLE; Schema: public; Owner: -
+-- Name: trials_publications; Type: TABLE; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE TABLE trials_publications (
@@ -810,33 +574,27 @@ CREATE TABLE trials_publications (
 -- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY cochrane_reviews ALTER COLUMN id SET DEFAULT nextval('cochrane_reviews_id_seq'::regclass);
-
-
---
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
---
-
 ALTER TABLE ONLY knex_migrations ALTER COLUMN id SET DEFAULT nextval('knex_migrations_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: document_categories_name_group_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
-ALTER TABLE ONLY organisation ALTER COLUMN id SET DEFAULT nextval('organisation_id_seq'::regclass);
-
-
---
--- Name: cochrane_reviews_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY cochrane_reviews
-    ADD CONSTRAINT cochrane_reviews_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY document_categories
+    ADD CONSTRAINT document_categories_name_group_unique UNIQUE (name, "group");
 
 
 --
--- Name: documents_fda_approval_id_file_id_name_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: document_categories_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
+--
+
+ALTER TABLE ONLY document_categories
+    ADD CONSTRAINT document_categories_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: documents_fda_approval_id_file_id_name_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY documents
@@ -844,7 +602,7 @@ ALTER TABLE ONLY documents
 
 
 --
--- Name: documents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: documents_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY documents
@@ -852,7 +610,7 @@ ALTER TABLE ONLY documents
 
 
 --
--- Name: fda_applications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: fda_applications_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY fda_applications
@@ -860,7 +618,7 @@ ALTER TABLE ONLY fda_applications
 
 
 --
--- Name: fda_approvals_fda_application_id_supplement_number_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: fda_approvals_fda_application_id_supplement_number_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY fda_approvals
@@ -868,7 +626,7 @@ ALTER TABLE ONLY fda_approvals
 
 
 --
--- Name: fda_approvals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: fda_approvals_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY fda_approvals
@@ -876,7 +634,7 @@ ALTER TABLE ONLY fda_approvals
 
 
 --
--- Name: files_documentcloud_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: files_documentcloud_id_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY files
@@ -884,7 +642,7 @@ ALTER TABLE ONLY files
 
 
 --
--- Name: files_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: files_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY files
@@ -892,7 +650,7 @@ ALTER TABLE ONLY files
 
 
 --
--- Name: files_sha1_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: files_sha1_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY files
@@ -900,7 +658,7 @@ ALTER TABLE ONLY files
 
 
 --
--- Name: files_source_url_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: files_source_url_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY files
@@ -908,7 +666,7 @@ ALTER TABLE ONLY files
 
 
 --
--- Name: interventions_name_type_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: interventions_name_type_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY interventions
@@ -916,7 +674,7 @@ ALTER TABLE ONLY interventions
 
 
 --
--- Name: interventions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: interventions_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY interventions
@@ -924,7 +682,7 @@ ALTER TABLE ONLY interventions
 
 
 --
--- Name: interventions_slug_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: interventions_slug_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY interventions
@@ -932,7 +690,7 @@ ALTER TABLE ONLY interventions
 
 
 --
--- Name: knex_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: knex_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY knex_migrations
@@ -940,7 +698,7 @@ ALTER TABLE ONLY knex_migrations
 
 
 --
--- Name: locations_name_type_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: locations_name_type_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY locations
@@ -948,7 +706,7 @@ ALTER TABLE ONLY locations
 
 
 --
--- Name: locations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: locations_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY locations
@@ -956,7 +714,7 @@ ALTER TABLE ONLY locations
 
 
 --
--- Name: locations_slug_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: locations_slug_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY locations
@@ -964,15 +722,7 @@ ALTER TABLE ONLY locations
 
 
 --
--- Name: organisation_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY organisation
-    ADD CONSTRAINT organisation_pkey PRIMARY KEY (id);
-
-
---
--- Name: organisations_name_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organisations_name_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY organisations
@@ -980,7 +730,7 @@ ALTER TABLE ONLY organisations
 
 
 --
--- Name: organisations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organisations_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY organisations
@@ -988,7 +738,7 @@ ALTER TABLE ONLY organisations
 
 
 --
--- Name: organisations_slug_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organisations_slug_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY organisations
@@ -996,7 +746,7 @@ ALTER TABLE ONLY organisations
 
 
 --
--- Name: persons_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: persons_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY persons
@@ -1004,7 +754,7 @@ ALTER TABLE ONLY persons
 
 
 --
--- Name: persons_slug_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: persons_slug_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY persons
@@ -1012,7 +762,7 @@ ALTER TABLE ONLY persons
 
 
 --
--- Name: problems_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: problems_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY conditions
@@ -1020,7 +770,7 @@ ALTER TABLE ONLY conditions
 
 
 --
--- Name: problems_slug_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: problems_slug_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY conditions
@@ -1028,7 +778,7 @@ ALTER TABLE ONLY conditions
 
 
 --
--- Name: publications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: publications_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY publications
@@ -1036,7 +786,7 @@ ALTER TABLE ONLY publications
 
 
 --
--- Name: publications_slug_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: publications_slug_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY publications
@@ -1044,7 +794,15 @@ ALTER TABLE ONLY publications
 
 
 --
--- Name: risk_of_bias_criterias_name_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: records_source_url_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
+--
+
+ALTER TABLE ONLY records
+    ADD CONSTRAINT records_source_url_unique UNIQUE (source_url);
+
+
+--
+-- Name: risk_of_bias_criterias_name_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY risk_of_bias_criterias
@@ -1052,7 +810,7 @@ ALTER TABLE ONLY risk_of_bias_criterias
 
 
 --
--- Name: risk_of_bias_criterias_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: risk_of_bias_criterias_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY risk_of_bias_criterias
@@ -1060,7 +818,7 @@ ALTER TABLE ONLY risk_of_bias_criterias
 
 
 --
--- Name: risk_of_biases_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: risk_of_biases_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY risk_of_biases
@@ -1068,7 +826,7 @@ ALTER TABLE ONLY risk_of_biases
 
 
 --
--- Name: risk_of_biases_risk_of_bias_criterias_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: risk_of_biases_risk_of_bias_criterias_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY risk_of_biases_risk_of_bias_criterias
@@ -1076,7 +834,7 @@ ALTER TABLE ONLY risk_of_biases_risk_of_bias_criterias
 
 
 --
--- Name: risk_of_biases_study_id_source_url_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: risk_of_biases_study_id_source_url_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY risk_of_biases
@@ -1084,7 +842,7 @@ ALTER TABLE ONLY risk_of_biases
 
 
 --
--- Name: sources_name_type_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: sources_name_type_unique; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY sources
@@ -1092,7 +850,7 @@ ALTER TABLE ONLY sources
 
 
 --
--- Name: sources_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: sources_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY sources
@@ -1100,7 +858,7 @@ ALTER TABLE ONLY sources
 
 
 --
--- Name: trialrecords_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: trialrecords_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY records
@@ -1108,7 +866,7 @@ ALTER TABLE ONLY records
 
 
 --
--- Name: trials_documents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: trials_documents_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY trials_documents
@@ -1116,7 +874,7 @@ ALTER TABLE ONLY trials_documents
 
 
 --
--- Name: trials_interventions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: trials_interventions_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY trials_interventions
@@ -1124,7 +882,7 @@ ALTER TABLE ONLY trials_interventions
 
 
 --
--- Name: trials_locations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: trials_locations_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY trials_locations
@@ -1132,7 +890,7 @@ ALTER TABLE ONLY trials_locations
 
 
 --
--- Name: trials_organisations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: trials_organisations_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY trials_organisations
@@ -1140,7 +898,7 @@ ALTER TABLE ONLY trials_organisations
 
 
 --
--- Name: trials_persons_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: trials_persons_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY trials_persons
@@ -1148,7 +906,7 @@ ALTER TABLE ONLY trials_persons
 
 
 --
--- Name: trials_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: trials_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY trials
@@ -1156,7 +914,7 @@ ALTER TABLE ONLY trials
 
 
 --
--- Name: trials_problems_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: trials_problems_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY trials_conditions
@@ -1164,7 +922,7 @@ ALTER TABLE ONLY trials_conditions
 
 
 --
--- Name: trials_publications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: trials_publications_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace:
 --
 
 ALTER TABLE ONLY trials_publications
@@ -1172,52 +930,46 @@ ALTER TABLE ONLY trials_publications
 
 
 --
--- Name: fda_approvals_type_index; Type: INDEX; Schema: public; Owner: -
+-- Name: fda_approvals_type_index; Type: INDEX; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE INDEX fda_approvals_type_index ON fda_approvals USING btree (type);
 
 
 --
--- Name: interventions_fda_application_number_index; Type: INDEX; Schema: public; Owner: -
+-- Name: interventions_fda_application_number_index; Type: INDEX; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE INDEX interventions_fda_application_number_index ON interventions USING btree (fda_application_id);
 
 
 --
--- Name: non_fda_documents_type_file_id_unique; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX non_fda_documents_type_file_id_unique ON documents USING btree (type, file_id) WHERE (fda_approval_id IS NULL);
-
-
---
--- Name: non_fda_documents_type_source_url_unique; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX non_fda_documents_type_source_url_unique ON documents USING btree (type, source_url) WHERE (fda_approval_id IS NULL);
-
-
---
--- Name: records_identifiers_index; Type: INDEX; Schema: public; Owner: -
+-- Name: records_identifiers_index; Type: INDEX; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE INDEX records_identifiers_index ON records USING gin (identifiers);
 
 
 --
--- Name: trialrecords_trial_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: trialrecords_trial_id_index; Type: INDEX; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE INDEX trialrecords_trial_id_index ON records USING btree (trial_id);
 
 
 --
--- Name: trials_documents_document_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: trials_documents_document_id_index; Type: INDEX; Schema: public; Owner: -; Tablespace:
 --
 
 CREATE INDEX trials_documents_document_id_index ON trials_documents USING btree (document_id);
+
+
+--
+-- Name: documents_document_category_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY documents
+    ADD CONSTRAINT documents_document_category_id_foreign FOREIGN KEY (document_category_id) REFERENCES document_categories(id);
 
 
 --
