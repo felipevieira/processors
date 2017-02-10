@@ -24,7 +24,6 @@ docutils==0.13.1          # via botocore
 doublemetaphone==0.1      # via dedupe
 et-xmlfile==1.0.1         # via openpyxl
 ezodf==0.3.2              # via tabulator
-numpy==1.12.0
 fastcluster==1.1.22       # via dedupe
 functools32==3.2.3.post2  # via jsonschema
 future==0.16.0            # via dedupe, dedupe-hcluster, jsontableschema, rlr
@@ -46,6 +45,7 @@ lxml==3.7.2               # via tabulator
 mako==1.0.6               # via alembic
 markupsafe==0.23          # via mako
 normality==0.3.9          # via dataset
+numpy==1.12.0             # via canonicalize, categorical-distance, dedupe-hcluster, highered, pyhacrf-datamade, pylbfgs, rlr, simplecosine
 openpyxl==2.4.2           # via tabulator
 packaging==16.8           # via setuptools
 persistent==4.2.2         # via btrees, zope.index
