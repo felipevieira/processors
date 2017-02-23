@@ -150,9 +150,17 @@ class TestLocationNormalizer(object):
         assert helpers.get_canonical_location_name(test_input) == expected
 
 class TestOrganisationNormalizer(object):
+    def _create_organisation_cluster(self, conn, canonical_name, variations):
+        cluster = {
+            'canonical': canonical_name,
+            'variations': [canonical_name] + [variations]
+        }
+        conn['warehouse']['organisation_clusters'].insert(cluster)
+
     @pytest.mark.parametrize("test_input,expected", [
         # Organisation normalized with a longer equivalent
-        ("Ghent University", "Ghent University Hospital"),
+        ("VERTEX PHARMS INC", "VERTEX PHARMS"),
+        ("Alliance Pharmaceuticals", "Alliance Pharmaceuticals Ltd"),
 
         # Organisation normalized as it is (the longest available form)
         ("Justus Liebig University of Giessen",
@@ -163,6 +171,6 @@ class TestOrganisationNormalizer(object):
          "Federal University of Campina Grande"),
     ])
 
-    @pytest.mark.usefixtures('organisation_cluster')
     def test_organisation_normalizer(self, conn, test_input, expected):
+        self._create_organisation_cluster(conn, expected, test_input)
         assert helpers.get_canonical_organisation_name(conn, test_input) == expected

@@ -340,25 +340,28 @@ def get_canonical_organisation_name(conn, organisation):
         conn (dict): connection dict
         organisation (str): the organisation to be normalized
     """
-    CLUSTER_QUERY = "SELECT canonical " + \
-                    "FROM organisation_clusters " + \
-                    "WHERE '%s'=ANY(variations)" % organisation
+    CLUSTER_QUERY = 'SELECT canonical FROM organisation_clusters ' + \
+                    'WHERE :organisation=ANY(variations)'
 
     normalized_form = organisation
 
     # Try to find the organisation in some cluster
     try:
-        normalized_form = conn['warehouse'].query(CLUSTER_QUERY).next()['canonical']
+        normalized_form = conn['warehouse'].query(CLUSTER_QUERY,
+                                                  organisation=organisation).next()['canonical']
         logger.debug('Organisation "%s" normalized as "%s"', organisation, normalized_form)
     except StopIteration:
         logger.debug('Organisation "%s" not normalized', organisation)
-        pass
 
     return normalized_form
 
 
 def _dedup_cluster(cluster_entries):
-    """Sample, train and build organisation clusters
+    """Sample, train and build organisation clusters.
+    Labeled training example used for clustering purposes
+    is stored in data/organisation_training_data.json and
+    can be regenerated using Dedupe consoleLabel tool
+    See: http://dedupe.readthedocs.io/en/latest/API-documentation.html#consoleLabel
 
     Args:
         cluster_entries (list): a list of candidates to
